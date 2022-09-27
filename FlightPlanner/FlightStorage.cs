@@ -117,7 +117,6 @@ namespace FlightPlanner
                         airportList.Add(flight.To);
                     }
                 }
-
                 return airportList.ToArray();
             }
         }
