@@ -38,8 +38,6 @@ namespace FlightPlanner.Controllers
         [HttpGet]
         public IActionResult SearchFlightById(int id)
         {
-
-          
             var search = FlightStorage.GetFlight(id);
             return search == null ? NotFound(id) : Ok(search);
         }
