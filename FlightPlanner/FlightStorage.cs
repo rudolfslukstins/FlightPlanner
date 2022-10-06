@@ -41,11 +41,11 @@ namespace FlightPlanner
             }
         }
 
-        public static bool IsExistingFlight(Flight flight)
+        public static bool IsExistingFlight(List<Flight> flights, Flight flight)
         {
             lock (_balanceLock)
             {
-                foreach (var f in _flights)
+                foreach (var f in flights)
                 {
                     if (flight.ArrivalTime == f.ArrivalTime &&
                         flight.DepartureTime == f.DepartureTime &&

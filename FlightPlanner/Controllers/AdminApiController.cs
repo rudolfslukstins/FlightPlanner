@@ -15,6 +15,7 @@ namespace FlightPlanner.Controllers
     public class AdminApiController : ControllerBase
     {
         private readonly FlightPlannerDbContext _context;
+        private static readonly object _lock = new object();
         public AdminApiController(FlightPlannerDbContext context)
         {
             _context = context;
@@ -28,51 +29,62 @@ namespace FlightPlanner.Controllers
                 .Include(f => f.To)
                 .Include(f => f.From)
                 .FirstOrDefault(f => f.Id == id);
-            //var flight = FlightStorage.GetFlight(id);
-             
-             if (flight == null)
-             {
-                 return NotFound();
-             }
-             
-             return Ok(flight);
+
+            if (flight == null)
+            {
+                return NotFound(id);
+            }
+
+            return Ok(flight);
         }
 
         [Route("flights")]
         [HttpPut]
         public IActionResult PutFlight(Flight flight)
         {
-            _context.Flights.Add(flight);
-            _context.SaveChanges();
-            
-            /*if (FlightStorage.IsWrongValues(flight) ||
+            if (FlightStorage.IsWrongValues(flight) ||
                 flight.From.AirportCode.Trim().ToUpper().Equals(flight.To.AirportCode.Trim().ToUpper()) ||
                 DateTime.Parse(flight.DepartureTime) >= DateTime.Parse(flight.ArrivalTime))
             {
                 return BadRequest();
             }
 
-            if (FlightStorage.IsExistingFlight(flight))
+            lock (_lock)
             {
-               return Conflict();
-            }
+                var flights = _context.Flights
+                    .Include(f => f.From)
+                    .Include(f => f.To)
+                    .ToList();
 
-            flight = FlightStorage.AddFlight(flight);*/
-            return Created("", flight);
+                if (FlightStorage.IsExistingFlight(flights, flight))
+                {
+                    return Conflict();
+                }
+
+                _context.Flights.Add(flight);
+                _context.SaveChanges();
+
+                return Created("", flight);
+            }
         }
 
         [Route("flights/{id}")]
         [HttpDelete]
         public IActionResult DeleteFlight(int id)
         {
-            var flight = _context.Flights.FirstOrDefault(f => f.Id == id);
-            if (flight != null)
+            lock (_lock)
             {
-                _context.Flights.Remove(flight);
-                _context.SaveChanges();
+                var flight = _context.Flights
+                    .FirstOrDefault(f => f.Id == id);
+
+                if (flight != null)
+                {
+                    _context.Flights.Remove(flight);
+                    _context.SaveChanges();
+                }
+
+                return Ok(id);
             }
-            //FlightStorage.DeleteFlight(id);
-            return Ok(id);
         }
     }
 }
