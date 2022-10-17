@@ -13,6 +13,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace FlightPlanner
 {
@@ -37,6 +39,10 @@ namespace FlightPlanner
 
             services.AddAuthentication("BasicAuthentication")
                 .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("BasicAuthentication", null);
+            services.AddDbContext<FlightPlannerDbContext>(options =>
+            {
+                options.UseSqlite("Filename=MyDatabase.db");
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

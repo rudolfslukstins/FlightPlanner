@@ -1,5 +1,10 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using static Microsoft.Extensions.Logging.EventSource.LoggingEventSource;
 
 namespace FlightPlanner.Controllers
 {
@@ -7,12 +12,44 @@ namespace FlightPlanner.Controllers
     [ApiController]
     public class CustomerApiFlightController : ControllerBase
     {
+        private readonly FlightPlannerDbContext _context;
+        private static readonly object _lock = new object();
+
+        public CustomerApiFlightController(FlightPlannerDbContext context)
+        {
+            _context = context;
+        }
+
         [Route("airports")]
         [HttpGet]
         public IActionResult SearchAirports(string search)
         {
-            var airportArray = FlightStorage.SearchAirport(search);
-            return Ok(airportArray);
+            var airportList = new List<Airport>();
+            var keyword = search.ToUpper().Trim();
+
+            var airportArray = _context.Flights
+                .Include(f => f.From)
+                .Include(f => f.To)
+                .ToList();
+
+            foreach (var flight in airportArray)
+            {
+                if (flight.From.AirportCode.ToUpper().Contains(keyword) ||
+                    flight.From.City.ToUpper().Contains(keyword) ||
+                    flight.From.Country.ToUpper().Contains(keyword))
+                {
+                    airportList.Add(flight.From);
+                }
+
+                if (flight.To.AirportCode.ToUpper().Contains(keyword) ||
+                    flight.To.City.ToUpper().Contains(keyword) ||
+                    flight.To.Country.ToUpper().Contains(keyword))
+                {
+                    airportList.Add(flight.To);
+                }
+            }
+
+            return Ok(airportList.ToArray());
         }
 
         [Route("flights/search")]
@@ -23,25 +60,41 @@ namespace FlightPlanner.Controllers
                 search.To == null ||
                 search.DepartureDate == null || search.From == search.To)
             {
-                return BadRequest(search);
+                return BadRequest();
             }
 
-            var pages = new PageResult
+            lock (_lock)
             {
-                Items = FlightStorage.SearchFlights(search)
-            };
-            
-            return Ok(pages);
+                var pages = new PageResult
+                {
+                    Items = _context.Flights
+                        .Include(f => f.To)
+                        .Include(f => f.From).ToList()
+                        .Where(f => f.From.AirportCode == search.From &&
+                                    f.To.AirportCode == search.To &&
+                                    DateTime.Parse(f.DepartureTime).Date == DateTime.Parse(search.DepartureDate).Date)
+                        .ToList()
+                };
+
+                return Ok(pages);
+            }
         }
 
         [Route("flights/{id}")]
         [HttpGet]
         public IActionResult SearchFlightById(int id)
         {
+            var search = _context.Flights
+                .Include(f => f.From)
+                .Include(f => f.To)
+                .FirstOrDefault(f => f.Id == id);
 
-          
-            var search = FlightStorage.GetFlight(id);
-            return search == null ? NotFound(id) : Ok(search);
+            if (search == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(search);
         }
     }
 }

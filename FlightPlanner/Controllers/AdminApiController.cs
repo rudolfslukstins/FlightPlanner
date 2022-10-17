@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace FlightPlanner.Controllers
 {
@@ -11,17 +14,27 @@ namespace FlightPlanner.Controllers
     [ApiController, Authorize]
     public class AdminApiController : ControllerBase
     {
+        private readonly FlightPlannerDbContext _context;
+        private static readonly object _lock = new object();
+        public AdminApiController(FlightPlannerDbContext context)
+        {
+            _context = context;
+        }
+
         [Route("flights/{id}")]
         [HttpGet]
         public IActionResult GetFlight(int id)
         {
-            var flight = FlightStorage.GetFlight(id);
-            
+            var flight = _context.Flights
+                .Include(f => f.To)
+                .Include(f => f.From)
+                .FirstOrDefault(f => f.Id == id);
+
             if (flight == null)
             {
-                return NotFound();
+                return NotFound(id);
             }
-            
+
             return Ok(flight);
         }
 
@@ -36,21 +49,42 @@ namespace FlightPlanner.Controllers
                 return BadRequest();
             }
 
-            if (FlightStorage.IsExistingFlight(flight))
+            lock (_lock)
             {
-               return Conflict();
-            }
+                var flights = _context.Flights
+                    .Include(f => f.From)
+                    .Include(f => f.To)
+                    .ToList();
 
-            flight = FlightStorage.AddFlight(flight);
-            return Created("", flight);
+                if (FlightStorage.IsExistingFlight(flights, flight))
+                {
+                    return Conflict();
+                }
+
+                _context.Flights.Add(flight);
+                _context.SaveChanges();
+
+                return Created("", flight);
+            }
         }
 
         [Route("flights/{id}")]
         [HttpDelete]
         public IActionResult DeleteFlight(int id)
         {
-            FlightStorage.DeleteFlight(id);
-            return Ok(id);
+            lock (_lock)
+            {
+                var flight = _context.Flights
+                    .FirstOrDefault(f => f.Id == id);
+
+                if (flight != null)
+                {
+                    _context.Flights.Remove(flight);
+                    _context.SaveChanges();
+                }
+
+                return Ok(id);
+            }
         }
     }
 }
