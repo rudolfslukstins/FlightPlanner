@@ -1,6 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using AutoMapper;
+using FlightPlanner.Core.Models;
+using FlightPlanner.Core.Services;
+using FlightPlanner.Core.Validations;
+using FlightPlanner.Data;
+using FlightPlanner.Models;
+using FlightPlanner.Models.Validations;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -12,89 +19,71 @@ namespace FlightPlanner.Controllers
     [ApiController]
     public class CustomerApiFlightController : ControllerBase
     {
-        private readonly FlightPlannerDbContext _context;
+        private readonly IFlightService _flightService;
+        private readonly IAirportService _airportService;
+        private readonly IFlightRequestValidators _flightRequestValidatorsValidator;
+        private readonly IPageResult _pageResult;
+        private readonly IEnumerable<IAirportValidator> _airportValidators;
+        private readonly IMapper _mapper;
         private static readonly object _lock = new object();
 
-        public CustomerApiFlightController(FlightPlannerDbContext context)
+        public CustomerApiFlightController( 
+            IFlightService flightService,
+            IFlightRequestValidators flightRequestValidatorsValidator,
+            IPageResult pageResult,
+            IEnumerable<IAirportValidator> airportValidators,
+            IAirportService airportService,
+            IMapper mapper)
         {
-            _context = context;
+            _flightService = flightService;
+            _flightRequestValidatorsValidator = flightRequestValidatorsValidator;
+            _pageResult = pageResult;
+            _airportValidators = airportValidators;
+            _airportService = airportService;
+            _mapper = mapper;
+
         }
 
         [Route("airports")]
         [HttpGet]
         public IActionResult SearchAirports(string search)
         {
-            var airportList = new List<Airport>();
-            var keyword = search.ToUpper().Trim();
-
-            var airportArray = _context.Flights
-                .Include(f => f.From)
-                .Include(f => f.To)
-                .ToList();
-
-            foreach (var flight in airportArray)
-            {
-                if (flight.From.AirportCode.ToUpper().Contains(keyword) ||
-                    flight.From.City.ToUpper().Contains(keyword) ||
-                    flight.From.Country.ToUpper().Contains(keyword))
-                {
-                    airportList.Add(flight.From);
-                }
-
-                if (flight.To.AirportCode.ToUpper().Contains(keyword) ||
-                    flight.To.City.ToUpper().Contains(keyword) ||
-                    flight.To.Country.ToUpper().Contains(keyword))
-                {
-                    airportList.Add(flight.To);
-                }
-            }
-
-            return Ok(airportList.ToArray());
+            var airports = _airportService.SearchAirport(search);
+            var response = airports.Select(a => _mapper.Map<AirportRequest>(a)).ToList();
+            
+            return Ok(response.ToArray());
         }
 
         [Route("flights/search")]
         [HttpPost]
         public IActionResult SearchFlights(SearchFlightRequest search)
         {
-            if (search.From == null ||
-                search.To == null ||
-                search.DepartureDate == null || search.From == search.To)
+            if (_flightRequestValidatorsValidator.IsValid(search))
             {
                 return BadRequest();
             }
 
             lock (_lock)
             {
-                var pages = new PageResult
-                {
-                    Items = _context.Flights
-                        .Include(f => f.To)
-                        .Include(f => f.From).ToList()
-                        .Where(f => f.From.AirportCode == search.From &&
-                                    f.To.AirportCode == search.To &&
-                                    DateTime.Parse(f.DepartureTime).Date == DateTime.Parse(search.DepartureDate).Date)
-                        .ToList()
-                };
-
+                var pages = _pageResult.NewPageResult(search);
+                
                 return Ok(pages);
             }
         }
 
         [Route("flights/{id}")]
         [HttpGet]
-        public IActionResult SearchFlightById(int id)
+        public IActionResult GetFlight(int id)
         {
-            var search = _context.Flights
-                .Include(f => f.From)
-                .Include(f => f.To)
-                .FirstOrDefault(f => f.Id == id);
+            var search = _flightService.GetCompleteFlightById(id);
 
             if (search == null)
             {
-                return NotFound();
+                return NotFound(id);
             }
+            var response = _mapper.Map<FlightRequest>(search);
 
-            return Ok(search);
+            return Ok(response);
         }
     }
 }

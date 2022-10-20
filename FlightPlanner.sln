@@ -3,7 +3,13 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.3.32825.248
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlightPlanner", "FlightPlanner\FlightPlanner.csproj", "{73B5AD2F-6658-4FFE-8E57-4049A5ED0EAD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlightPlanner", "FlightPlanner\FlightPlanner.csproj", "{73B5AD2F-6658-4FFE-8E57-4049A5ED0EAD}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlightPlanner.Core", "FlightPlanner.Core\FlightPlanner.Core.csproj", "{4C645E12-52F2-41E8-B989-117AE6973A46}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlightPlanner.Data", "FlightPlanner.Data\FlightPlanner.Data.csproj", "{F79F88DC-B573-4595-9847-A2DB006D33E1}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlightPlanner.Services", "FlightPlanner.Services\FlightPlanner.Services.csproj", "{C6800FC3-E934-4BCE-9E1A-CEE9C2EEEF0D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +21,18 @@ Global
 		{73B5AD2F-6658-4FFE-8E57-4049A5ED0EAD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{73B5AD2F-6658-4FFE-8E57-4049A5ED0EAD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{73B5AD2F-6658-4FFE-8E57-4049A5ED0EAD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4C645E12-52F2-41E8-B989-117AE6973A46}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4C645E12-52F2-41E8-B989-117AE6973A46}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4C645E12-52F2-41E8-B989-117AE6973A46}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4C645E12-52F2-41E8-B989-117AE6973A46}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F79F88DC-B573-4595-9847-A2DB006D33E1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F79F88DC-B573-4595-9847-A2DB006D33E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F79F88DC-B573-4595-9847-A2DB006D33E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F79F88DC-B573-4595-9847-A2DB006D33E1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C6800FC3-E934-4BCE-9E1A-CEE9C2EEEF0D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C6800FC3-E934-4BCE-9E1A-CEE9C2EEEF0D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C6800FC3-E934-4BCE-9E1A-CEE9C2EEEF0D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C6800FC3-E934-4BCE-9E1A-CEE9C2EEEF0D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
