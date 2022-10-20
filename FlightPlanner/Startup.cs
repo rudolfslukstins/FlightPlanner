@@ -13,8 +13,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoMapper;
+using FlightPlanner.Core.Services;
+using FlightPlanner.Core.Validations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using FlightPlanner.Data;
+using FlightPlanner.Models.Validations;
+using FlightPlanner.Services;
+using FlightRequestValidators = FlightPlanner.Models.Validations.FlightRequestValidators;
 
 namespace FlightPlanner
 {
@@ -43,6 +50,22 @@ namespace FlightPlanner
             {
                 options.UseSqlite("Filename=MyDatabase.db");
             });
+
+            services.AddScoped<IDbService,DbService>();
+            services.AddScoped<IFlightDbContext, FlightPlannerDbContext>();
+            services.AddScoped<IEntityService<Airport>, EntityService<Airport>>();
+            services.AddScoped<IEntityService<Flight>, EntityService<Flight>>();
+            services.AddScoped<IAirportService, AirportService>();
+            services.AddScoped<IFlightService, FlightService>();
+            services.AddScoped<IFlightValidator, CarrierValidator>();
+            services.AddScoped<IFlightValidator, FlightTimeValidator>();
+            services.AddScoped<IFlightValidator, FlightAirportValidator>();
+            services.AddScoped<IAirportValidator, AirportCityValidator>();
+            services.AddScoped<IAirportValidator, AirportCodeValidator>();
+            services.AddScoped<IAirportValidator, AirportCountryValidator>();
+            services.AddScoped<IPageResult, PageResultRequest>();
+            services.AddScoped<IFlightRequestValidators, FlightRequestValidators>();
+            services.AddSingleton<IMapper>(AutoMapperConfig.CreateMapper());
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
